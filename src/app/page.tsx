@@ -1,103 +1,105 @@
-import Image from "next/image";
+import ProductCard from "@/components/ProductCard";
+import { createClient } from "@/lib/supabaseClient";
+import NavBar from "@/components/NavBar";
 
-export default function Home() {
+export default async function HomePage() {
+  const supabase = createClient();
+
+  // Fetch products
+  const { data: products, error: productsError } = await supabase
+    .from("products")
+    .select(
+      "id, name, price, original_price, image_url, volume_ml, rating, category"
+    )
+    .order("category", { ascending: true });
+
+  if (productsError) {
+    console.error(productsError);
+    return <div>Error loading products.</div>;
+  }
+
+  // Fetch categories (banner images)
+  const { data: categoriesData, error: categoriesError } = await supabase
+    .from("categories")
+    .select("name, banner_url");
+
+  if (categoriesError) {
+    console.error(categoriesError);
+  }
+
+  // Map category -> banner_url
+  const bannerImages: Record<string, string> = {};
+  categoriesData?.forEach((c) => {
+    if (c.banner_url) {
+      bannerImages[c.name.toLowerCase()] = c.banner_url;
+    }
+  });
+
+  // Group products by category
+  const grouped: Record<string, typeof products> = {};
+  products?.forEach((p) => {
+    if (!grouped[p.category]) grouped[p.category] = [];
+    grouped[p.category].push(p);
+  });
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <>
+      <NavBar />
+      <main className="bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen">
+        <div className="max-w-7xl mx-auto px-6 py-12 space-y-16">
+          {Object.entries(grouped).map(([category, items]) => {
+            const categoryKey = category.toLowerCase().trim();
+            const bannerUrl = bannerImages[categoryKey];
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            return (
+              <section key={category} id={category} className="scroll-mt-20">
+                {/* Banner */}
+                {bannerUrl && (
+                  <div className="relative h-48 md:h-64 mb-8 rounded-xl overflow-hidden">
+                    <img
+                      src={bannerUrl}
+                      alt={`${category} banner`}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                      <h2
+                        className="text-4xl font-extrabold text-white capitalize"
+                        style={{
+                          fontFamily: "'Playfair Display', serif",
+                        }}
+                      >
+                        {category}
+                      </h2>
+                    </div>
+                  </div>
+                )}
+
+                {/* Product grid */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
+                  {items.map((p) => (
+                    <div
+                      key={p.id}
+                      className="transition-transform transform hover:-translate-y-1 hover:shadow-2xl rounded-xl bg-white shadow-lg"
+                    >
+                      <ProductCard
+                        id={p.id}
+                        name={p.name}
+                        price={Number(p.price)}
+                        original_price={
+                          p.original_price ? Number(p.original_price) : null
+                        }
+                        image_url={p.image_url}
+                        volume_ml={p.volume_ml}
+                        rating={p.rating}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+    </>
   );
 }
