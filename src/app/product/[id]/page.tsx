@@ -84,7 +84,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               )}
 
               {/* Star Rating */}
-              {product.rating && product.reviews_count !== null && (
+              {product.rating !== null && product.reviews_count !== null && (
                 <StarRating
                   rating={product.rating}
                   reviewsCount={product.reviews_count}
