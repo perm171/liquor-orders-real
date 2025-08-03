@@ -57,7 +57,7 @@ export default function CartPage() {
 
     // Map joined arrays to single objects as expected by CartItemRow
     setCart(
-      (data || []).map((item: any) => ({
+      (data || []).map((item) => ({
         ...item,
         products: Array.isArray(item.products) ? item.products[0] : item.products,
         product_variants: Array.isArray(item.product_variants) ? item.product_variants[0] : item.product_variants,
@@ -76,14 +76,27 @@ export default function CartPage() {
       .from("cart_items")
       .update({ quantity })
       .eq("id", itemId);
+    if (error) {
+      console.error("Error updating quantity:", error);
+      setLoading(false);
+      return;
+    }
 
-    if (!error) await fetchCart();
+    await fetchCart();
+    setLoading(false);
   }
 
   async function removeItem(itemId: string) {
     setLoading(true);
     const { error } = await supabase.from("cart_items").delete().eq("id", itemId);
-    if (!error) await fetchCart();
+    if (error) {
+      console.error("Error removing item:", error);
+      setLoading(false);
+      return;
+    }
+
+    await fetchCart();
+    setLoading(false);
   }
 
   const total = cart.reduce((sum, item) => {
