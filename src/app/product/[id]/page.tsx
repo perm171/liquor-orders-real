@@ -4,7 +4,7 @@ import NavBar from "@/components/NavBar";
 import AddToCart from "@/components/AddToCartButton";
 
 interface ProductPageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 // Star Rating Component
@@ -31,7 +31,7 @@ function StarRating({ rating, reviewsCount }: { rating: number; reviewsCount: nu
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const { id } = await params; // Await params before using
+  const { id } = params;
 
   const supabase = createClient();
 
