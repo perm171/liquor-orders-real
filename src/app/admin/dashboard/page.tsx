@@ -107,8 +107,12 @@ export default function AdminDashboard() {
         original_price: "",
         stock_quantity: "",
       });
-    } catch (err: any) {
-      setMessage("❌ Error adding product: " + err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        setMessage("❌ Error adding product: " + err.message);
+      } else {
+        setMessage("❌ Error adding product");
+      }
     } finally {
       setSubmitting(false);
     }
